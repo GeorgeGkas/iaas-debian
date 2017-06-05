@@ -11,8 +11,8 @@ The system is used to connect to virtual machine is Ubuntu 16.04 (LTS).
 
 ## Table Of Contents
 
-[Assumptions](#assumptions)
-[First Sign In](#first-sign-in)
+- [Assumptions](#assumptions)
+- [First Sign In](#first-sign-in)
 
 ## Assumptions
 
