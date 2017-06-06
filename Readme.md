@@ -13,6 +13,8 @@ The system is used to connect to virtual machine is Ubuntu 16.04 (LTS).
 
 - [Assumptions](#assumptions)
 - [First Sign In](#first-sign-in)
+- [Change root Password](#change-root-password)
+- [Updating The System](#updating-the-system)
 
 ## Assumptions
 
@@ -62,4 +64,106 @@ You will now be prompted to enter your **PASSWORD**. Please note that you will N
 [user@debian-jessie-server ~]# 
 ```
 
-Congatulations! You just made your first sign in. You can type `exit` any time to disconnect from the server. 
+Congatulations! You just made your first sign in. You can type `exit` any time to disconnect from the server.
+
+## Change root Password
+
+Before we continue our configurations we have to change the root password. There is only one acount named root. Is created by default in every Unix-like operating system (like ours). By default it has access to all commands available in the system. We also refer to root user as superuser. 
+
+We access the superuser account by executing the command bellow:
+
+```
+su
+```
+
+We are promt to enter the root password. For me, the root password was the same as my user's one. You might be given a different root password.
+
+```
+Password:
+```
+
+If the password was entered successfully you gained access to root's account.
+
+```
+root@debian-jessie-server:/home/user#
+```
+
+We won't use the root account very much. The only reason we might do so, is to change security settings. The bellow command change the password of any user in the system. In this case it'll change the password of our superuser. 
+
+```
+passwd
+```
+                                                                               
+A new line will be appeared.
+                                                                               
+```
+Enter new UNIX password:
+```
+                                                                               
+Enter the new password you want to use, press enter and retype it. Choose a long and difficult password (eg 20-characters long). 
+                                                                               
+```
+Retype new UNIX password:
+```
+                                                                               
+If the two passwords matches, you expect to see a confirmation message. 
+                                                                               
+```
+passwd: password updated successfully
+```
+                                                                               
+Else you'll have to repeat the last procedure again.
+
+## Updating our system
+
+Next we are going to handle our system updates. The first thing you have to do is to sign in as root.
+
+```
+root@debian-jessie-server:/home/user#
+```
+
+The command that check for new updates is
+
+```
+apt-get updates
+```
+
+and goes along with
+
+```
+apt-get upgrade
+```
+
+The second command do the actual installation. Every time you want to update your system you have to type those two commands. I advice you to do it often. If your system gets outdated, you can have potential security risks and that's something we don't want to.
+
+If you haven't execute the above commands until now it's time to do so. 
+
+Note that when you execute `apt-get upgrade` command you are promt with a question.
+
+```
+Do you want to continue? [Y/n]
+```
+
+Just type `y` or hit enter.
+
+In this stage lets consider something. What will happen if you forget to connect to your server for a long time? For a month or two? Remember the security issues we might encounter if we don't update our system often.
+
+To bypass this problem we are going to install a package that will automate the procedure of checking and installing **security** updates. That means, you still have to do a manual update when you connect to your VM, but now you know that the critical updates will be installed on your system. 
+
+The package is named `unattended-upgrades`. Install it using the bellow command.
+
+```
+apt-get install unattended-upgrades
+```
+
+**Note**: You can install any package you like using the `apt-get install` command. 
+
+When you promt for confirmation, type `y` and hit enter. 
+
+Now we have to configure the package. Fortunately, `unattended-upgrades` comes with default configs. To enable them type:
+
+```
+dpkg-reconfigure unattended-upgrades
+```
+
+Select `yes` when you promt for confirmation.
