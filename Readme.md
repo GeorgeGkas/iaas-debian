@@ -3,7 +3,7 @@
 Configure a clean Debian server.
 ---
 
-This repository holds the configuration procedure I used to setup a web server in one of my [Virtual Machines](https://en.wikipedia.org/wiki/Virtual_machine) ([IAAS service model](https://en.wikipedia.org/wiki/Cloud_computing#Infrastructure_as_a_service_.28IaaS.29)). Some techniques described bellow can be used on other [VM](https://en.wikipedia.org/wiki/Virtual_machine) running the same distro too, altough the initial state may differ. In my case I received the VM with a clean Debian Server installed on top, among with a plain text password and username to make the first sign in -written in a piece of paper and given to me by hand-.
+This repository holds the configuration procedure I used to setup a web server in one of my [Virtual Machines](https://en.wikipedia.org/wiki/Virtual_machine) ([IAAS service model](https://en.wikipedia.org/wiki/Cloud_computing#Infrastructure_as_a_service_.28IaaS.29)). Some techniques described bellow can be used on other [VM](https://en.wikipedia.org/wiki/Virtual_machine) running the same distro too, although the initial state may differ. In my case I received the VM with a clean Debian Server installed on top, among with a plain text password and username to make the first sign in -written in a piece of paper and given to me by hand-.
 
 I tried to use the best practices, but that does not guarantee my configuration settings are suitable for every use. I took the time to document, as much as possible, each step. A basic understanding of Linux systems is good to have, but not required. Moreover, I go beyond than simple system configuration and analyze installation procedures of software packages that you might no need. 
 
@@ -15,6 +15,7 @@ The system is used to connect to virtual machine is Ubuntu 16.04 (LTS).
 - [First Sign In](#first-sign-in)
 - [Change root Password](#change-root-password)
 - [Updating The System](#updating-the-system)
+- [Adding New User](#adding-new-user)
 
 ## Assumptions
 
@@ -50,7 +51,7 @@ ECDSA key fingerprint is 12:a7:28:01:25:aa:73:33:d6:20:67:91:52:55:3e:ff.
 Are you sure you want to continue connecting (yes/no)?
 ```
 
-This is a really important message. You've been asked to validate the authenticity of your server. To be said, that means that you have to ask your VM provider to send you the **key fingerprint** of your vm. Then you just check if all letters are match with the ones you see in your screen. If this is not the case, contact your VM provider and ask for additional help.
+This is a really important message. You've been asked to validate the authenticity of your server. To be said, that means that you have to ask your VM provider to send you the **key fingerprint** of your VM. Then you just check if all letters are match with the ones you see in your screen. If this is not the case, contact your VM provider and ask for additional help.
 
 Type `yes`. 
 
@@ -64,7 +65,7 @@ You will now be prompted to enter your **PASSWORD**. Please note that you will N
 [user@debian-jessie-server ~]# 
 ```
 
-Congatulations! You just made your first sign in. You can type `exit` any time to disconnect from the server.
+Congratulations! You just made your first sign in. You can type `exit` any time to disconnect from the server.
 
 ## Change root Password
 
@@ -76,7 +77,7 @@ We access the superuser account by executing the command bellow:
 su
 ```
 
-We are promt to enter the root password. For me, the root password was the same as my user's one. You might be given a different root password.
+We are prompt to enter the root password. For me, the root password was the same as my user's one. You might be given a different root password.
 
 ```
 Password:
@@ -125,7 +126,7 @@ root@debian-jessie-server:/home/user#
 The command that check for new updates is
 
 ```
-apt-get updates
+apt-get update
 ```
 
 and goes along with
@@ -138,7 +139,7 @@ The second command do the actual installation. Every time you want to update you
 
 If you haven't execute the above commands until now it's time to do so. 
 
-Note that when you execute `apt-get upgrade` command you are promt with a question.
+Note that when you execute `apt-get upgrade` command you are prompt with a question.
 
 ```
 Do you want to continue? [Y/n]
@@ -166,4 +167,83 @@ Now we have to configure the package. Fortunately, `unattended-upgrades` comes w
 dpkg-reconfigure unattended-upgrades
 ```
 
-Select `yes` when you promt for confirmation.
+Select `yes` when you prompt for confirmation.
+
+## Adding New User
+
+Next we're going to create a new user. Right now I use the one called `user`. We'd like to create a new one for ourselves to manage the tasks in our server.
+
+First we have to be already signed into the root's account. For this example, we're going to create a new user named `georgegkas` (pick your own username).
+
+We start by executing the bellow command *-Be sure to replace georgegkas with the user that you want to create.-*:
+
+```
+useradd georgegkas
+```
+
+Every user in Unix-based distros have it's home directory. Let's create one for our new user.
+
+```
+mkdir /home/georgegkas
+```
+
+Next we have to set home folder permissions.
+
+```
+chown georgegkas:georgegkas /home/georgegkas -R
+```
+
+The command `chown` is used to change the ownership of any file and folder in the system. We can also combine the above command with `chmod` to allow only our user to modify the contents of he's home folder.
+
+```
+chmod 700 -R /home/georgegkas
+```
+
+Next, we're going to set a password. Pick a strong one. 
+
+```
+passwd georgegkas
+```
+
+Recall the command `passwd`. You can pass a parameter to indicate which user's password want to change.
+
+Right now our new user has limited privileges on the system. Most of the time we have to run commands available only by root (such as `apt-get update`). To sign in as root every time is not a good practice and can expose our server's security. 
+
+To bypass this signin-as-root restriction we are going to add our new user to `sudo` group. Sudo stands for either "substitute user do" or "super user do". Sudo allow us to run commands as any other users (typically as root), we just have to add the `sudo` keyword at the beginning of any command.
+
+By default, we have to install sudo on the system. 
+
+```
+apt-get install sudo
+```
+
+Now add the new user to the sudo group:
+
+```
+usermod -a -G sudo georgegkas
+```
+
+Lets make a try. Sign out and sign in using the new user. In our case this is what we're going to execute:
+
+```
+ssh georgegkas@88.23.54.32
+```
+
+Type the password you set for your user and run the system update command. Typically you're going to get the following messages:
+
+```
+E: Could not open lock file /var/lib/apt/lists/lock - open (13: Permission denied)
+E: Unable to lock directory /var/lib/apt/lists/
+E: Could not open lock file /var/lib/dpkg/lock - open (13: Permission denied)
+E: Unable to lock the administration directory (/var/lib/dpkg/), are you root?
+```
+
+As we already have said, `apt-get update` can be executed only by root or a sudoer (a sudo user). Try to run the update again using the `sudo` command like so:
+
+```
+sudo apt-get update
+```
+
+We can now update our system without the need to sign in as root. Moreover, we can run any other command we'd like as a root user, just by inserting `sudo` at the beginning. 
+
+From now on, every time we want to create a new user and allow him to execute commands as root, we have to run the `usermod` command we introduced above.
