@@ -16,6 +16,9 @@ The system is used to connect to virtual machine is Ubuntu 16.04 (LTS).
 - [Change root Password](#change-root-password)
 - [Updating The System](#updating-the-system)
 - [Adding New User](#adding-new-user)
+- [Delete a User](#delete-a-user)
+- [Generating ssh key-pair](#generating-ssh-key-pair)
+- [Using ssh key-pairs](#using-ssh-key-pairs)
 
 ## Assumptions
 
@@ -247,3 +250,142 @@ sudo apt-get update
 We can now update our system without the need to sign in as root. Moreover, we can run any other command we'd like as a root user, just by inserting `sudo` at the beginning. 
 
 From now on, every time we want to create a new user and allow him to execute commands as root, we have to run the `usermod` command we introduced above.
+
+## Delete a User
+
+Now that we have set up our primary user, we're going to delete the user that was provided to us in the beginning (named `user` in my case).
+
+```
+deluser –remove-all-files user
+```
+
+The above command remove `user` from the system, deletes his home directory and all the files owned by this user. 
+
+## Generating ssh key-pair
+
+SSH keys provide a more secure way of connecting to a VM. Right now, we have to type our user's password every time we want to sign in to the server. Passwords can be cracked with brute-force methods and eventually anyone who has access to a computer can connect to our server. SSH key pair provides us with two different text files containing the public and the private key respectively. We place the public key to our server and keep the private key in our machine. With this method, the attacker cannot connect to our server without the private key. We also do not have to enter the user's password every time we connect to the server. Finally, we can use the same ssh public-private key pair for as many VMs as we like.
+
+Let's start by creating a ssh key-pair in our machine.
+
+```
+ssh-keygen -t ed25519 -a 100
+```
+
+I'm not going to analyze what the above command do. A nice post can be found on [Security stackexchange forum](https://security.stackexchange.com/questions/143442/what-are-ssh-keygen-best-practices).
+
+```
+Enter file in which to save the key (/home/georgegkas/.ssh/id_ed25519):
+```
+
+First prompt allow us to change the filename of the new generated key-pair. We'll use the default location, so hit enter to continue. By default, all ssh keys are saved under `/home/user/.ssh` folder, in this example `user` is `georgegkas`.
+
+```
+Enter passphrase (empty for no passphrase):
+Enter same passphrase again:
+```
+
+Next, we've been asked to enter a passphrase for the private key. Even if we can skip this option, securing our private key with a password is highly recommended. We're going to enter that password every time we want to connect to the server that using this private key. Choose a strong one.
+
+```
+Your identification has been saved in /home/georgegkas/.ssh/id_ed25519.
+Your public key has been saved in /home/georgegkas/.ssh/id_ed25519.pub.
+The key fingerprint is:
+SHA256:/qWwgLHsmcQBao8TuL8zlfE8j1omb0+Q2C6JzP8Yqfw me@mymachine
+The key's randomart image is:
++--[ED25519 256]--+
+|                 |
+|                 |
+|  .              |
+|.. ..o .         |
+|oo  +=+ S        |
+|.+.+oO+O         |
+|.o%o% =+.   .    |
+| o+= @oo.+ o     |
+|  ==E+ooo o      |
++----[SHA256]-----+
+```
+
+We see now that we have successfully generated a new key pair. The private key have been saved as `id_ed25519` and the public key as `id_ed25519.pub`. The **key fingerprint** is used to identify the authenticity of the key pair and `me@mymachine` is the our localhost user who is able to use this key pair to connect into a server.
+
+## Using ssh key-pairs
+
+In this section we're going to add our ssh public key to our VM. First we're going to connect to our server as root.
+
+```
+root@debian-jessie-server:/home/georgegkas#
+```
+
+Let's create the `.ssh` folder for `georgegkas` and set the appropriate ownership. Note that, the ssh key pair can be used only with the user it has been attached to. That means, if we have another user on the server, called `alex` for example, and we store our public key only in `georgegkas`, we are not allow to connect as `alex` with that key. To do so, we have to follow the same procedure on `alex`'s account as well. Execute the following commands. *Remember to change `georgegkas` to your user account.*
+
+```
+mkdir /home/georgegkas/.ssh
+chmod 700 /home/georgegkas/.ssh
+touch /home/georgegkas/.ssh/authorized_keys
+```
+
+Next we're going to copy our public key to our `authorized_keys` file of our server. In your server type:
+
+```
+nano /home/georgegkas/.ssh/authorized_keys
+```
+
+to use nano text editor.
+
+Open `id_ed25519.pub` file we created earlier with `ssh-keygen`, copy the text and add it to the nano console of the server. To paste the string type `Ctrl+Shift+V`. Save the file with `Ctrl+O` and pressing enter and close the nano window with `Ctrl+X`.
+
+Next step is to edit the `sshd_config` file. 
+
+```
+nano /etc/ssh/sshd_config
+```
+
+Using the arrow keys navigate to that line:
+
+```
+Port 22
+```
+
+Port 22 is the default port ssh uses. Change the number into something else greater than 1024, I chose 2456 for our example. This adds a layer to security by obscurity. Next nagivate until you see the line:
+
+```
+PermitRootLogin yes
+```
+
+If the value is set to `yes` change it to `no`. We won't allow anyone to connect as superuser. 
+
+Finally, navigate until you see this line:
+
+```
+#PasswordAuthentication yes
+```
+
+Change the above line to `PasswordAuthentication no`. By the time we use the key pair, we won't allow anyone to connect using the user's password. 
+
+Save the file `Ctrl+O` and enter, and close it `Ctrl+X`. We have to note in this point that the configurations saved in `sshd_config` will affect all the users in our system. That means, every user who wants to connect to the server needs to have a public ssh key installed on his home directory and use the port which defined above. We have to reload the ssh service.
+
+```
+systemctl restart ssh
+```
+
+Finally we need to reconfigure the permissions of our home directory.
+
+```
+chmod 400 /home/georgegkas/.ssh/authorized_keys
+chown georgegkas:georgegkas /home/georgegkas -R
+```
+
+Exit the current ssh session. Bellow is the new method to login in your VM:
+
+```
+ssh georgegkas@88.23.54.32 -p 2456
+```
+
+Point the parameter `-p` we added in our command. This indicates on what port the ssh server listens to (remember that we change the default port in `sshd_config`). 
+
+When you execute the above command, you will be prompt to enter the ssh private key password:
+
+```
+Enter passphrase for key '/home/georgegkas/.ssh/id_ed25519':
+```
+
+And now you are signed into the server.
