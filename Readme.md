@@ -21,6 +21,7 @@ The system is used to connect to virtual machine is Ubuntu 16.04 (LTS).
 - [Using ssh key-pairs](#using-ssh-key-pairs)
 - [Configuring ufw Firewall](#configuring-ufw-firewall)
 - [Setting Up Bash Shell](#setting-up-bash-shell)
+- [Installing Fail2Ban](#installing-fail2ban)
 
 ## Assumptions
 
@@ -608,3 +609,75 @@ chsh -s /bin/bash
 ```
 
 Exit the ssh session and sign in again. You should see a friendlier terminal, the same one we use in our Ubuntu machine.
+
+## Installing Fail2Ban
+
+Fail2Ban is an application that reads log files on the system and can detect any potential automated attack. Using a predefined set of rules, when Fail2Ban suspect that someone try to compromise the system, will add rules on your firewall, thus blocking IP address of the attacker, either for a set amount of time or permanently. Fail2Ban can monitor a wide variety of system services (such as http, ssh, sftp, etc), but we will configure only ssh at that point. 
+
+To install Fail2Ban type:
+
+```
+apt-get install fail2ban
+```
+
+*Hint:* Remember to run the above command with sudo.
+
+First, we're going to create a copy of the default configuration settings located in `fail2ban.conf` file into a new file named `fail2ban.local`. If we want to make any changes in the configuration settings, we only should change the `.local` file.
+
+```
+sudo cp /etc/fail2ban/fail2ban.conf /etc/fail2ban/fail2ban.local
+```
+
+The same rule applies for the `jail.conf` file. In `jail.local` we are going to set the restriction rules.
+
+```
+sudo cp /etc/fail2ban/jail.conf /etc/fail2ban/jail.local
+```
+
+Let's open `jail.local` and configure it.
+
+```
+sudo nano /etc/fail2ban/jail.local
+```
+
+Under the `[DEFAULT]` section find the settings `bantime`, `findtime`, `maxretry`. The first option sets the number of seconds the IP address will be banned. The second option specifies the length of time between failed login attempts before a ban is set. The third option reveals the maximum number of failed attempts before the IP will be blocked.
+
+By default, we allow to make 3 failed login attempts withing 600 seconds (= 10 minuets). If we exceed this number of tries, our IP will be banned for 10 minuets. The default options are well defined, but I'd like to change the `bantime` to some higher value (eg 3600 = 1 hour).
+
+Next move down until you see the bellow lines:
+
+```
+[ssh]
+
+enabled  = true
+port     = ssh
+filter   = sshd
+logpath  = /var/log/auth.log
+maxretry = 6
+```
+
+The above entry configures ssh. What we have to do here is to change the `port` option to the port we use to connect over ssh. We also can lower the max tries. In the end we change to something like this:
+
+```
+[ssh]
+
+enabled  = true
+port     = 2456 # change that number with your ssh port
+filter   = sshd
+logpath  = /var/log/auth.log
+maxretry = 3 # we lowered the max tries
+```
+
+We can now save the file. To check if we configured the application correctly run:
+
+```
+sudo fail2ban-client status
+```
+
+The output should be:
+
+```
+Status
+|- Number of jail:  1
+`- Jail list:   ssh
+```
