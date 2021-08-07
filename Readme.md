@@ -7,7 +7,7 @@ This repository holds the configuration procedure I used to setup a web server i
 
 I tried to use the best practices, but that does not guarantee my configuration settings are suitable for every use. I took the time to document, as much as possible, each step. A basic understanding of Linux systems is good to have, but not required. Moreover, I go beyond than simple system configuration and analyze installation procedures of software packages that you might no need. 
 
-The system is used to connect to virtual machine is Ubuntu 16.04 (LTS).
+The system is used to connect to virtual machine is Ubuntu 20.04 (LTS).
 
 ## Table Of Contents
 
@@ -80,7 +80,7 @@ Before we continue our configurations we have to change the root password. There
 We access the superuser account by executing the command bellow:
 
 ```
-su
+sudo su -
 ```
 
 We are prompt to enter the root password. For me, the root password was the same as my user's one. You might be given a different root password.
@@ -132,13 +132,13 @@ root@debian-jessie-server:/home/user#
 The command that check for new updates is
 
 ```
-apt-get update
+apt update
 ```
 
 and goes along with
 
 ```
-apt-get upgrade
+apt upgrade
 ```
 
 The second command do the actual installation. Every time you want to update your system you have to type those two commands. I advice you to do it often. If your system gets outdated, you can have potential security risks and that's something we don't want to.
@@ -252,14 +252,14 @@ sudo apt-get update
 
 We can now update our system without the need to sign in as root. Moreover, we can run any other command we'd like as a root user, just by inserting `sudo` at the beginning. 
 
-From now on, every time we want to create a new user and allow him to execute commands as root, we have to run the `usermod` command we introduced above.
+From now on, every time we want to create a new user and allow him to execute commands as root, we have to run the `useradd` command we introduced above.
 
 ## Delete a User
 
 Now that we have set up our primary user, we're going to delete the user that was provided to us in the beginning (named `user` in my case).
 
 ```
-deluser –remove-all-files user
+deluser -–remove-all-files user
 ```
 
 The above command remove `user` from the system, deletes his home directory and all the files owned by this user. 
