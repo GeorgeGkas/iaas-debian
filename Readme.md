@@ -370,6 +370,14 @@ Next change will be to only allow th user `georgegkas` to be able to connect. Th
 AllowUsers georgegkas
 ```
 
+Last but not least, we should only allow secure algorithms when initializing a connection to the ssh server. 
+
+```
+Ciphers aes128-ctr,aes192-ctr,aes256-ctr
+HostKeyAlgorithms ecdsa-sha2-nistp256,ecdsa-sha2-nistp384,ecdsa-sha2-nistp521,ssh-rsa
+KexAlgorithms ecdh-sha2-nistp256,ecdh-sha2-nistp384,ecdh-sha2-nistp521,diffie-hellman-group-exchange-sha256
+```
+
 Save the file `Ctrl+O` and enter, and close it `Ctrl+X`. We have to note in this point that the configurations saved in `sshd_config` will affect all the users in our system. That means, every user who wants to connect to the server needs to have a public ssh key installed on his home directory and use the port which defined above. We have to reload the ssh service.
 
 ```
