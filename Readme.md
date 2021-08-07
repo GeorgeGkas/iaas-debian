@@ -364,6 +364,12 @@ Finally, navigate until you see this line:
 
 Change the above line to `PasswordAuthentication no`. By the time we use the key pair, we won't allow anyone to connect using the user's password. 
 
+Next change will be to only allow th user `georgegkas` to be able to connect. This is ok if we only have one user who needs to connect into our server. If we should allow more users, we can append them using the `AllowUsers` config property.
+
+```
+AllowUsers georgegkas
+```
+
 Save the file `Ctrl+O` and enter, and close it `Ctrl+X`. We have to note in this point that the configurations saved in `sshd_config` will affect all the users in our system. That means, every user who wants to connect to the server needs to have a public ssh key installed on his home directory and use the port which defined above. We have to reload the ssh service.
 
 ```
